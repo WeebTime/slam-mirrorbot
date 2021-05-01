@@ -4,12 +4,18 @@ import threading
 import time
 import random
 import string
+
 import aria2p
 import telegram.ext as tg
 from dotenv import load_dotenv
 from pyrogram import Client
 from telegraph import Telegraph
+
 import socket
+import faulthandler
+faulthandler.enable()
+from megasdkrestclient import MegaSdkRestClient, errors as mega_err
+import subprocess
 
 socket.setdefaulttimeout(600)
 
@@ -90,33 +96,49 @@ except KeyError as e:
     LOGGER.error("One or more env variables missing! Exiting now")
     exit(1)
 
-try:
-    if os.environ['USE_TELEGRAPH'].upper() == 'TRUE':
-        USE_TELEGRAPH = True
-    else:
-        raise KeyError
-except KeyError:
-    USE_TELEGRAPH = False
-
-# Generate USER_SESSION_STRING
 LOGGER.info("Generating USER_SESSION_STRING")
 with Client(':memory:', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN) as app:
     USER_SESSION_STRING = app.export_session_string()
 
-# Generate TELEGRAPH_TOKEN
-if USE_TELEGRAPH:
-    sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
-    LOGGER.info("Using Telegra.ph")
-    LOGGER.info("Generating TELEGRAPH_TOKEN using '" + sname + "' name")
-    telegraph = Telegraph()
-    telegraph.create_account(short_name=sname)
-    TELEGRAPH_TOKEN = telegraph.get_access_token()
-    LOGGER.info("Telegraph Token Generated: '" + TELEGRAPH_TOKEN + "'")
-if not USE_TELEGRAPH:
-    TELEGRAPH_TOKEN = None
-    LOGGER.info("Not Using Telegra.ph")
-    pass
+#Generate Telegraph Token
+sname = ''.join(random.SystemRandom().choices(string.ascii_letters, k=8))
+LOGGER.info("Generating Telegraph Token using '" + sname + "' name")
+telegraph = Telegraph()
+telegraph.create_account(short_name=sname)
+telegraph_token = telegraph.get_access_token()
+LOGGER.info("Telegraph Token Generated: '" + telegraph_token + "'")
 
+try:
+    MEGA_KEY = getConfig('MEGA_KEY')
+
+except KeyError:
+    MEGA_KEY = None
+    LOGGER.info('MEGA API KEY NOT AVAILABLE')
+if MEGA_KEY is not None:
+    # Start megasdkrest binary
+    subprocess.Popen(["megasdkrest", "--apikey", MEGA_KEY])
+    time.sleep(3)  # Wait for the mega server to start listening
+    mega_client = MegaSdkRestClient('http://localhost:6090')
+    try:
+        MEGA_USERNAME = getConfig('MEGA_USERNAME')
+        MEGA_PASSWORD = getConfig('MEGA_PASSWORD')
+        if len(MEGA_USERNAME) > 0 and len(MEGA_PASSWORD) > 0:
+            try:
+                mega_client.login(MEGA_USERNAME, MEGA_PASSWORD)
+            except mega_err.MegaSdkRestClientException as e:
+                logging.error(e.message['message'])
+                exit(0)
+        else:
+            LOGGER.info("Mega API KEY provided but credentials not provided. Starting mega in anonymous mode!")
+            MEGA_USERNAME = None
+            MEGA_PASSWORD = None
+    except KeyError:
+        LOGGER.info("Mega API KEY provided but credentials not provided. Starting mega in anonymous mode!")
+        MEGA_USERNAME = None
+        MEGA_PASSWORD = None
+else:
+    MEGA_USERNAME = None
+    MEGA_PASSWORD = None
 try:
     HEROKU_API_KEY = getConfig('HEROKU_API_KEY')
 except KeyError:
@@ -128,24 +150,22 @@ except KeyError:
     logging.warning('HEROKU APP NAME not provided!')
     HEROKU_APP_NAME = None
 try:
+    MAX_TORRENT_SIZE = int(getConfig("MAX_TORRENT_SIZE"))
+except KeyError:
+    MAX_TORRENT_SIZE = None
+try:
+   ENABLE_FILESIZE_LIMIT = getConfig('ENABLE_FILESIZE_LIMIT')
+   if ENABLE_FILESIZE_LIMIT.lower() == 'true':
+       ENABLE_FILESIZE_LIMIT = True
+   else:
+       ENABLE_FILESIZE_LIMIT = False
+except KeyError:
+    ENABLE_FILESIZE_LIMIT = False
+try:
     UPTOBOX_TOKEN = getConfig('UPTOBOX_TOKEN')
 except KeyError:
-    logging.warning('UPTOBOX_TOKEN not provided!')
+    logging.info('UPTOBOX_TOKEN not provided!')
     UPTOBOX_TOKEN = None
-try:
-    MEGA_API_KEY = getConfig('MEGA_API_KEY')
-except KeyError:
-    logging.warning('MEGA API KEY not provided!')
-    MEGA_API_KEY = None
-try:
-    MEGA_EMAIL_ID = getConfig('MEGA_EMAIL_ID')
-    MEGA_PASSWORD = getConfig('MEGA_PASSWORD')
-    if len(MEGA_EMAIL_ID) == 0 or len(MEGA_PASSWORD) == 0:
-        raise KeyError
-except KeyError:
-    logging.warning('MEGA Credentials not provided!')
-    MEGA_EMAIL_ID = None
-    MEGA_PASSWORD = None
 try:
     INDEX_URL = getConfig('INDEX_URL')
     if len(INDEX_URL) == 0:
@@ -201,14 +221,6 @@ try:
 except KeyError:
     USE_SERVICE_ACCOUNTS = False
 try:
-    BLOCK_MEGA_FOLDER = getConfig('BLOCK_MEGA_FOLDER')
-    if BLOCK_MEGA_FOLDER.lower() == 'true':
-        BLOCK_MEGA_FOLDER = True
-    else:
-        BLOCK_MEGA_FOLDER = False
-except KeyError:
-    BLOCK_MEGA_FOLDER = False
-try:
     BLOCK_MEGA_LINKS = getConfig('BLOCK_MEGA_LINKS')
     if BLOCK_MEGA_LINKS.lower() == 'true':
         BLOCK_MEGA_LINKS = True
@@ -224,6 +236,10 @@ try:
 except KeyError:
     SHORTENER = None
     SHORTENER_API = None
+try:
+    IMAGE_URL = getConfig('IMAGE_URL')
+except KeyError:
+    IMAGE_URL = 'https://telegra.ph/file/db03910496f06094f1f7a.jpg'
 
 updater = tg.Updater(token=BOT_TOKEN,use_context=True)
 bot = updater.bot

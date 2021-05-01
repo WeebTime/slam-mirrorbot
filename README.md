@@ -3,32 +3,35 @@
 # Slam Mirror Bot
 This is a telegram bot writen in python for mirroring files on the internet to our beloved Google Drive.
 
-## Features supported:
-<details>
-    <summary><b>Click here for more details</b></summary>
+# Features supported:
 
-- Mirroring direct download links to Google Drive
-- Mirroring Mega.nz links to Google Drive (In development stage)
-- Mirroring Uptobox.com links to Google Drive (**NOTE**: Uptobox account must be premium)
+## Additional Features
+- Mirroring Uptobox.com links to Google Drive (Uptobox account must be premium)
+- Nyaa.si and Sukebei Torrent search
+- Speedtest with picture results
+- Limiting torrent size support
+- Check Heroku dynos stats
+- Add stickers to your pack
+- Shell and Executor
+- Racaty.net support
+- Custom image support
+ 
+## From Source Repos
+- Mirroring direct download links, Torrent, and Telegram files to Google Drive
+- Mirroring Mega.nz links to google drive
 - Copy files from someone's drive to your drive (Using Autorclone)
 - Download/upload progress, speeds and ETAs
+- Mirror all youtube-dl supported links
 - Docker support
-- Uploading To Team Drives.
+- Uploading To Team Drives
 - Index Link support
 - Service account support
-- Mirror all youtube-dl supported links
-- Mirror telegram files
 - Delete files from drive
-- Add stickers to your pack
-- Check Heroku dynos stats
-- Nyaa.si and Sukebei Torrent search
-- Shell and Executor
 - Shortener support
-- Custom Buttons
 - Custom Filename (Only for url, telegram files and ytdl. Not for mega links and magnet/torrents)
-- Speedtest with picture results
-- Extracting password protected files and using custom filename see these examples:
-> https://telegra.ph/Magneto-Python-Aria---Custom-Filename-Examples-01-20
+- Extracting password protected files, using custom filename and download from password protected index links see these examples:
+<p><a href="https://telegra.ph/Magneto-Python-Aria---Custom-Filename-Examples-01-20"> <img src="https://img.shields.io/badge/see%20on%20telegraph-grey?style=for-the-badge" width="190""/></a></p>
+
 - Extract these filetypes and uploads to google drive
 ```
 ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, 
@@ -37,11 +40,8 @@ HFS, LZH, LZMA, LZMA2, MBR, MSI, MSLZ, NSIS,
 NTFS, RPM, SquashFS, UDF, VHD, XAR, Z.
 ```
 
-</details>
-
-## How to deploy?
+# How to deploy?
 Deploying is pretty much straight forward and is divided into several steps as follows:
-
 ## Installing requirements
 
 - Clone this repo:
@@ -54,11 +54,18 @@ cd mirrorbot
 For Debian based distros
 ```
 sudo apt install python3
-sudo snap install docker 
 ```
+Install Docker by following the [official docker docs](https://docs.docker.com/engine/install/debian/)
+
+
 - For Arch and it's derivatives:
 ```
 sudo pacman -S docker python
+```
+
+- Install dependencies for running setup scripts:
+```
+pip3 install -r requirements-cli.txt
 ```
 
 ## Setting up config file
@@ -85,13 +92,14 @@ Fill up rest of the fields. Meaning of each fields are discussed below:
 - **INDEX_URL**: (Optional field) Refer to https://github.com/maple3142/GDIndex/ The URL should not have any trailing '/'
 - **API_KEY**: This is to authenticate to your telegram account for downloading Telegram files. You can get this from https://my.telegram.org DO NOT put this in quotes.
 - **API_HASH**: This is to authenticate to your telegram account for downloading Telegram files. You can get this from https://my.telegram.org
-- **USE_TELEGRAPH**: Set to `true` to use Telegra.ph for search results from /list bot command, or else set to `false`.
-- **MEGA_API_KEY**: Mega.nz api key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk)
-- **MEGA_EMAIL_ID**: Your email id you used to sign up on mega.nz for using premium accounts (Leave th)
+- **MEGA_KEY**: Mega.nz api key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk)
+- **MEGA_USERNAME**: Your email id you used to sign up on mega.nz for using premium accounts (Leave th)
 - **MEGA_PASSWORD**: Your password for your mega.nz account 
 - **STOP_DUPLICATE_MIRROR**: (Optional field) (Leave empty if unsure) if this field is set to `True` , bot will check file in drive, if it is present in drive, downloading will ne stopped. (Note - File will be checked using filename, not using filehash, so this feature is not perfect yet)
-- **BLOCK_MEGA_FOLDER**: (Optional field) If you want to remove mega.nz folder support, set it to `True`.
+- **ENABLE_FILESIZE_LIMIT**: Set it to `True` if you want to use `MAX_TORRENT_SIZE`.
+- **MAX_TORRENT_SIZE**: To limit the torrent mirror size, Fill The amount you want to limit, examples: if you fill `15` it will limit `15gb`.
 - **BLOCK_MEGA_LINKS**: (Optional field) If you want to remove mega.nz mirror support (bcoz it's too much buggy and unstable), set it to `True`.
+- **IMAGE_URL**: (Optional field) Show Image/Logo in /start message. Fill value of image your link image, use telegra.ph or any direct link image.
 - **UPTOBOX_TOKEN**: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account).
 - **SHORTENER_API**: Fill your shortener api key if you are using shortener.
 - **SHORTENER**: (Optional field) if you want to use shortener in Gdrive and index link, fill shotener url here. Examples:
@@ -103,7 +111,7 @@ urlshortx.com
 shortzon.com
 ```
 
-**Note**: Above are the supported url shorteners. Except these only some url shorteners are supported. If you want to use any other url shortener then first ask me that shortener is supported or not.
+**Note**: Above are the supported url shorteners. Except these only some url shorteners are supported.
 
 </details>
 
@@ -140,12 +148,12 @@ sudo docker run mirrorbot
 
 ## Deploying on Heroku
 
-Give Star & Fork this repo, then upload **token.pickle** to your forks
+Fork this repo then upload **token.pickle** to your forks
 
-<p><a href="https://heroku.com/deploy"> <img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy to Heroku" /></a></p>
+**NOTE**: If you didn't upload **token.pickle**, uploading will not work.
+<p><a href="https://heroku.com/deploy"> <img src="https://img.shields.io/badge/Deploy%20To%20Heroku-blueviolet?style=for-the-badge&logo=heroku" width="200""/></a></p>
 
 ## Deploying on Heroku using heroku-cli
-
 <details>
     <summary><b>Click here for more details</b></summary>
 
@@ -156,15 +164,15 @@ heroku login
 ```
 - Create a new heroku app:
 ```
-heroku create <appname>
+heroku create appname
 ```
 - Select This App in your Heroku-cli: 
 ```
-heroku git:remote -a <appname>
+heroku git:remote -a appname
 ```
 - Change Dyno Stack to a Docker Container:
 ```
-heroku stack:set container -a <appname>
+heroku stack:set container -a appname
 ```
 - Add Private Credentials and Config Stuff:
 ```
@@ -181,11 +189,11 @@ git push heroku master --force
 - Restart Worker by these commands,You can Do it manually too in heroku.
 - For Turning off the Bot:
 ```
-heroku ps:scale worker=0 -a <appname>
+heroku ps:scale worker=0 -a appname
 ```
 - For Turning on the Bot:
 ```
-heroku ps:scale worker=1 -a <appname>	 	
+heroku ps:scale worker=1 -a appname		
 ```
 
 </details>
@@ -241,13 +249,16 @@ python3 add_to_team_drive.py -d SharedTeamDriveSrcID
 ```
 
 ## Youtube-dl authentication using .netrc file
-For using your premium accounts in youtube-dl, edit the [.netrc](https://github.com/breakdowns/slam-mirrorbot/blob/master/.netrc) file according to following format:
+For using your premium accounts in youtube-dl, edit the netrc file according to following format:
 ```
 machine host login username password my_youtube_password
 ```
 where host is the name of extractor (eg. youtube, twitch). Multiple accounts of different hosts can be added each separated by a new line
 
-## Credits
+# Support Group
+<p><a href="https://t.me/SlamMirrorSupport"> <img src="https://img.shields.io/badge/Slam%20Mirror%20Support-black?style=for-the-badge&logo=telegram" width="230""/></a></p>
+
+# Credits
 
 Thanks to:
 - [out386](https://github.com/out386) heavily inspired from telegram bot which is written in JS
@@ -255,5 +266,6 @@ Thanks to:
 - [Dank-del](https://github.com/Dank-del/) for base repo
 - [magneto261290](https://github.com/magneto261290/) for some features
 - [SVR666](https://github.com/SVR666/) for some features & fixes
+- [breakdowns](https://github.com/breakdowns/) me (lol)
 
 and many more people who aren't mentioned here, but may be found in [Contributors](https://github.com/breakdowns/slam-mirrorbot/graphs/contributors).
